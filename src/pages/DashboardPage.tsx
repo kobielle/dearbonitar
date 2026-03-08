@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyItems } from "@/lib/bonitarCloud";
-import { useDeliveries } from "@/lib/deliveries";
+import { useDashboardStats } from "@/lib/donations";
 import { useNotifications } from "@/lib/notifications";
 
 const DashboardPage = () => {

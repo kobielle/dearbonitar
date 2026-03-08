@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useItems, requestItem } from "@/lib/bonitarCloud";
 import { useAuth } from "@/contexts/AuthContext";
+import { canRequestGift } from "@/lib/donations";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -28,6 +29,11 @@ const ItemFeedPage = () => {
   const handleRequest = async (itemId: string) => {
     if (!user) { toast.error("Please sign in to request items"); return; }
     try {
+      const allowed = await canRequestGift(user.id);
+      if (!allowed) {
+        toast.error("You've reached the limit of 3 gifts per 61 days");
+        return;
+      }
       await requestItem(itemId);
       toast.success("Item requested!");
     } catch (err: any) {

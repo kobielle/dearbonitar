@@ -131,6 +131,48 @@ export type Database = {
           },
         ]
       }
+      donation_disputes: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          evidence: Json | null
+          id: string
+          item_request_id: string
+          reporter_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          evidence?: Json | null
+          id?: string
+          item_request_id: string
+          reporter_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          evidence?: Json | null
+          id?: string
+          item_request_id?: string
+          reporter_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_disputes_item_request_id_fkey"
+            columns: ["item_request_id"]
+            isOneToOne: false
+            referencedRelation: "item_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "donation_disputes_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       donor_badges: {
         Row: {
           awarded_at: string | null
@@ -195,26 +237,54 @@ export type Database = {
       item_requests: {
         Row: {
           created_at: string | null
+          donation_status: string | null
+          donor_confirmation: boolean | null
+          donor_id: string | null
+          donor_marked_at: string | null
           id: string
           item_id: string
+          recipient_confirmation: boolean | null
+          recipient_confirmed_at: string | null
           recipient_id: string
           status: string | null
+          updated_at: string | null
         }
         Insert: {
           created_at?: string | null
+          donation_status?: string | null
+          donor_confirmation?: boolean | null
+          donor_id?: string | null
+          donor_marked_at?: string | null
           id?: string
           item_id: string
+          recipient_confirmation?: boolean | null
+          recipient_confirmed_at?: string | null
           recipient_id: string
           status?: string | null
+          updated_at?: string | null
         }
         Update: {
           created_at?: string | null
+          donation_status?: string | null
+          donor_confirmation?: boolean | null
+          donor_id?: string | null
+          donor_marked_at?: string | null
           id?: string
           item_id?: string
+          recipient_confirmation?: boolean | null
+          recipient_confirmed_at?: string | null
           recipient_id?: string
           status?: string | null
+          updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "item_requests_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "item_requests_item_id_fkey"
             columns: ["item_id"]

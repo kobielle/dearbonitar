@@ -18,6 +18,8 @@ import DonorSpotlightPage from "./pages/DonorSpotlightPage";
 import AdvertisePage from "./pages/AdvertisePage";
 import SupportPage from "./pages/SupportPage";
 import GuidelinesPage from "./pages/GuidelinesPage";
+import VerificationPage from "./pages/VerificationPage";
+import DeliveriesPage from "./pages/DeliveriesPage";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +44,8 @@ const App = () => (
           <Route path="/advertise" element={<AdvertisePage />} />
           <Route path="/support" element={<SupportPage />} />
           <Route path="/guidelines" element={<GuidelinesPage />} />
+          <Route path="/verification" element={<VerificationPage />} />
+          <Route path="/deliveries" element={<DeliveriesPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

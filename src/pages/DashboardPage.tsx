@@ -1,0 +1,103 @@
+import { Heart, Gift, MessageCircle, Star, Settings, Plus, BookOpen, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+
+const DashboardPage = () => {
+  const stats = [
+    { icon: Gift, label: "Items Donated", value: "12", color: "text-primary" },
+    { icon: Heart, label: "Items Received", value: "3", color: "text-secondary" },
+    { icon: Star, label: "Badge", value: "❤️ Heart", color: "text-primary" },
+    { icon: MessageCircle, label: "Messages", value: "5", color: "text-charcoal" },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      <div className="pt-20 pb-12">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="font-display text-3xl font-bold text-foreground">Welcome back, Bonitar!</h1>
+              <p className="font-body text-muted-foreground">Your kindness dashboard</p>
+            </div>
+            <Button variant="hero" asChild>
+              <Link to="/post-item">
+                <Plus className="h-4 w-4" />
+                Donate Item
+              </Link>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {stats.map((stat) => (
+              <div key={stat.label} className="bg-card rounded-xl p-5 border border-border shadow-card">
+                <stat.icon className={`h-5 w-5 ${stat.color} mb-3`} />
+                <p className="font-display text-2xl font-bold text-foreground">{stat.value}</p>
+                <p className="font-body text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 bg-card rounded-xl border border-border p-6">
+              <h2 className="font-display text-lg font-semibold text-foreground mb-4">Recent Activity</h2>
+              <div className="space-y-4">
+                {[
+                  { text: "You donated 'Children's Books Bundle'", time: "2 hours ago", icon: "📚" },
+                  { text: "New message from @HopefulSoul", time: "5 hours ago", icon: "💬" },
+                  { text: "You received 'Kitchen Blender'", time: "1 day ago", icon: "🍳" },
+                  { text: "You donated 'Winter Jackets'", time: "3 days ago", icon: "🧥" },
+                ].map((activity, i) => (
+                  <div key={i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent transition-colors">
+                    <span className="text-2xl">{activity.icon}</span>
+                    <div className="flex-1">
+                      <p className="font-body text-sm text-foreground">{activity.text}</p>
+                      <p className="font-body text-xs text-muted-foreground">{activity.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h2 className="font-display text-lg font-semibold text-foreground mb-4">Whisper of the Day</h2>
+                <div className="bg-coral-light rounded-lg p-4">
+                  <p className="font-body text-sm text-foreground italic leading-relaxed">
+                    "Someone out there smiled today because of something you gave." 💛
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-card rounded-xl border border-border p-6">
+                <h2 className="font-display text-lg font-semibold text-foreground mb-4">Quick Links</h2>
+                <div className="space-y-2">
+                  {[
+                    { to: "/feed", icon: TrendingUp, label: "Browse Items" },
+                    { to: "/journal", icon: BookOpen, label: "Journal" },
+                    { to: "/chat", icon: MessageCircle, label: "Messages" },
+                    { to: "/profile", icon: Settings, label: "Profile" },
+                  ].map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors font-body text-sm text-foreground"
+                    >
+                      <link.icon className="h-4 w-4 text-primary" />
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+export default DashboardPage;

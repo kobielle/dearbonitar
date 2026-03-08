@@ -20,6 +20,7 @@ import SupportPage from "./pages/SupportPage";
 import GuidelinesPage from "./pages/GuidelinesPage";
 import VerificationPage from "./pages/VerificationPage";
 import DeliveriesPage from "./pages/DeliveriesPage";
+import AdminPage from "./pages/AdminPage";
 
 const queryClient = new QueryClient();
 

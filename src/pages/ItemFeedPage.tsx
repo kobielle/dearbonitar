@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { MapPin, Search, Heart, Clock } from "lucide-react";
+import { MapPin, Search, Heart, Clock, AlertTriangle, ShieldAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useItems, requestItem } from "@/lib/bonitarCloud";
 import { useAuth } from "@/contexts/AuthContext";
-import { canRequestGift } from "@/lib/donations";
+import { canRequestGift, useGiftEligibility } from "@/lib/donations";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -23,19 +23,33 @@ const categoryEmojis: Record<string, string> = {
 
 const ItemFeedPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   const { items, loading } = useItems(selectedCategory);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const isRecipient = profile?.role === "recipient";
+  const { eligible, remaining, loading: eligLoading } = useGiftEligibility(
+    isRecipient ? user?.id : undefined
+  );
+
+  const filteredItems = searchQuery
+    ? items.filter(
+        (i) =>
+          i.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          i.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : items;
 
   const handleRequest = async (itemId: string) => {
     if (!user) { toast.error("Please sign in to request items"); return; }
+    if (!isRecipient) { toast.error("Only recipients can request items"); return; }
     try {
       const allowed = await canRequestGift(user.id);
       if (!allowed) {
-        toast.error("You've reached the limit of 3 gifts per 61 days");
+        toast.error("You've reached the limit of 3 gifts per 61 days. Your eligibility resets automatically.");
         return;
       }
       await requestItem(itemId);
-      toast.success("Item requested!");
+      toast.success("Item requested! The donor will be notified.");
     } catch (err: any) {
       toast.error(err.message || "Request failed");
     }
@@ -51,10 +65,44 @@ const ItemFeedPage = () => {
             <p className="font-body text-muted-foreground">Find items available near you</p>
           </div>
 
+          {/* Gift limit banner for recipients */}
+          {isRecipient && !eligLoading && (
+            <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${eligible ? "bg-accent" : "bg-destructive/10 border border-destructive/20"}`}>
+              {eligible ? (
+                <>
+                  <Heart className="h-5 w-5 text-primary shrink-0" />
+                  <p className="font-body text-sm text-foreground">
+                    You can request <strong>{remaining}</strong> more gift{remaining !== 1 ? "s" : ""} in the current 61-day period.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+                  <p className="font-body text-sm text-destructive">
+                    You've reached the limit of 3 gifts per 61 days. Your eligibility will reset automatically.
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Safety warning */}
+          <div className="mb-6 p-3 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center gap-3">
+            <ShieldAlert className="h-5 w-5 text-secondary shrink-0" />
+            <p className="font-body text-xs text-muted-foreground">
+              <strong>Safety:</strong> Always meet in public places (churches, schools, bus stops) for pickups. Never share your home address.
+            </p>
+          </div>
+
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search items..." className="pl-10 font-body" />
+              <Input
+                placeholder="Search items..."
+                className="pl-10 font-body"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
 
@@ -68,11 +116,11 @@ const ItemFeedPage = () => {
 
           {loading ? (
             <div className="text-center py-12 text-muted-foreground font-body">Loading items...</div>
-          ) : items.length === 0 ? (
+          ) : filteredItems.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground font-body">No items found. Be the first to donate!</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <div key={item.id} className="group bg-card rounded-xl border border-border hover:shadow-elevated transition-all duration-300 overflow-hidden cursor-pointer">
                   <div className="h-44 bg-accent flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-300">
                     {item.image_urls?.length ? (
@@ -95,9 +143,22 @@ const ItemFeedPage = () => {
                         <Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                       </span>
                     </div>
-                    <Button variant="warmOutline" size="sm" className="w-full mt-4" onClick={() => handleRequest(item.id)}>
-                      Request Item
-                    </Button>
+                    {isRecipient && (
+                      <Button
+                        variant="warmOutline"
+                        size="sm"
+                        className="w-full mt-4"
+                        onClick={() => handleRequest(item.id)}
+                        disabled={!eligible}
+                      >
+                        {eligible ? "Request Item" : "Limit Reached"}
+                      </Button>
+                    )}
+                    {!user && (
+                      <Button variant="warmOutline" size="sm" className="w-full mt-4" onClick={() => handleRequest(item.id)}>
+                        Request Item
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}

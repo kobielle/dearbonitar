@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { Package, Truck, CheckCircle, Clock, XCircle, AlertTriangle } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, XCircle, AlertTriangle, ShieldAlert, MapPin } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useDeliveries, type Delivery } from "@/lib/deliveries";
-import { useDonorRequests, useRecipientRequests, markDelivered, confirmReceived, fileDispute } from "@/lib/donations";
+import { useDeliveries, createDelivery, updateDeliveryStatus, type Delivery } from "@/lib/deliveries";
+import { useDonorRequests, useRecipientRequests, markDelivered, confirmReceived, fileDispute, useDisputeCount } from "@/lib/donations";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
@@ -17,19 +18,22 @@ const donationStatusConfig: Record<string, { icon: typeof Clock; label: string; 
 };
 
 const deliveryStatusConfig: Record<string, { icon: typeof Clock; label: string; color: string }> = {
-  pending: { icon: Clock, label: "Pending", color: "text-secondary" },
+  pending: { icon: Clock, label: "Pending Pickup", color: "text-secondary" },
   dispatched: { icon: Truck, label: "Dispatched", color: "text-blue-500" },
   delivered: { icon: CheckCircle, label: "Delivered", color: "text-green-600" },
   cancelled: { icon: XCircle, label: "Cancelled", color: "text-destructive" },
 };
 
 const DeliveriesPage = () => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { deliveries, loading: delLoading } = useDeliveries();
   const { requests: donorReqs, loading: donorLoading } = useDonorRequests();
   const { requests: recipientReqs, loading: recipientLoading } = useRecipientRequests();
   const [disputeId, setDisputeId] = useState<string | null>(null);
   const [disputeText, setDisputeText] = useState("");
+  const [logisticsForm, setLogisticsForm] = useState<{ requestId: string; itemId: string; recipientId: string } | null>(null);
+  const [logisticsCompany, setLogisticsCompany] = useState("");
+  const [trackingNumber, setTrackingNumber] = useState("");
 
   const isDonor = profile?.role === "donor";
   const requests = isDonor ? donorReqs : recipientReqs;
@@ -62,6 +66,25 @@ const DeliveriesPage = () => {
     } catch { toast.error("Failed to file dispute"); }
   };
 
+  const handleCreateDelivery = async () => {
+    if (!logisticsForm || !logisticsCompany.trim()) return;
+    try {
+      await createDelivery({
+        item_id: logisticsForm.itemId,
+        recipient_id: logisticsForm.recipientId,
+        logistics_company: logisticsCompany,
+      });
+      if (trackingNumber) {
+        // Tracking number can be added later
+      }
+      toast.success("Logistics delivery created! The recipient will be notified.");
+      setLogisticsForm(null);
+      setLogisticsCompany("");
+      setTrackingNumber("");
+      window.location.reload();
+    } catch { toast.error("Failed to create delivery"); }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -71,6 +94,14 @@ const DeliveriesPage = () => {
             <Package className="h-10 w-10 text-primary mx-auto mb-3" />
             <h1 className="font-display text-3xl font-bold text-foreground mb-2">Deliveries & Donations</h1>
             <p className="font-body text-muted-foreground">Track your donation requests and deliveries</p>
+          </div>
+
+          {/* Safety warning */}
+          <div className="mb-6 p-4 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center gap-3">
+            <ShieldAlert className="h-5 w-5 text-secondary shrink-0" />
+            <p className="font-body text-xs text-muted-foreground">
+              <strong>Safety Tip:</strong> For direct pickups, always meet at public locations — churches, schools, bus stops, or shopping plazas. Never share your home address.
+            </p>
           </div>
 
           {/* Donation Requests Section */}
@@ -88,6 +119,7 @@ const DeliveriesPage = () => {
               {requests.map((r) => {
                 const cfg = donationStatusConfig[r.donation_status] || donationStatusConfig.pending;
                 const otherUser = isDonor ? r.recipient : r.donor;
+                const otherUserId = isDonor ? r.recipient_id : r.donor_id;
                 return (
                   <div key={r.id} className="bg-card rounded-xl border border-border p-5 shadow-card">
                     <div className="flex items-start justify-between mb-3">
@@ -96,6 +128,8 @@ const DeliveriesPage = () => {
                         <p className="font-body text-xs text-muted-foreground">
                           {isDonor ? "To" : "From"}: {otherUser?.display_name || otherUser?.username || "Unknown"}
                         </p>
+                        {/* Dispute history warning */}
+                        <DisputeWarning userId={otherUserId ?? undefined} />
                       </div>
                       <div className="flex items-center gap-1.5">
                         <cfg.icon className={`h-4 w-4 ${cfg.color}`} />
@@ -105,9 +139,18 @@ const DeliveriesPage = () => {
 
                     <div className="flex gap-2 flex-wrap">
                       {isDonor && r.donation_status === "pending" && (
-                        <Button size="sm" variant="default" onClick={() => handleMarkDelivered(r.id)}>
-                          Mark as Delivered
-                        </Button>
+                        <>
+                          <Button size="sm" variant="default" onClick={() => handleMarkDelivered(r.id)}>
+                            Mark as Delivered
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setLogisticsForm({ requestId: r.id, itemId: r.item_id, recipientId: r.recipient_id })}
+                          >
+                            <Truck className="h-3 w-3 mr-1" /> Use Logistics
+                          </Button>
+                        </>
                       )}
                       {!isDonor && r.donation_status === "delivered-pending-recipient" && (
                         <>
@@ -121,6 +164,31 @@ const DeliveriesPage = () => {
                       )}
                     </div>
 
+                    {/* Logistics form */}
+                    {logisticsForm?.requestId === r.id && (
+                      <div className="mt-3 space-y-2 p-3 rounded-lg bg-accent">
+                        <p className="font-body text-sm font-medium text-foreground">Arrange Logistics Delivery</p>
+                        <p className="font-body text-xs text-muted-foreground">
+                          The recipient pays delivery fees at the logistics office. You are not charged.
+                        </p>
+                        <Input
+                          placeholder="Logistics company (e.g. GIG, ABC Transport)"
+                          value={logisticsCompany}
+                          onChange={(e) => setLogisticsCompany(e.target.value)}
+                        />
+                        <Input
+                          placeholder="Tracking number (optional)"
+                          value={trackingNumber}
+                          onChange={(e) => setTrackingNumber(e.target.value)}
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="default" onClick={handleCreateDelivery}>Create Delivery</Button>
+                          <Button size="sm" variant="ghost" onClick={() => setLogisticsForm(null)}>Cancel</Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dispute form */}
                     {disputeId === r.id && (
                       <div className="mt-3 space-y-2">
                         <textarea
@@ -178,20 +246,36 @@ const DeliveriesPage = () => {
                         {formatDistanceToNow(new Date(d.created_at), { addSuffix: true })}
                       </span>
                     </div>
+                    {/* Payment notice for recipient */}
+                    {d.status === "pending" && !isDonor && (
+                      <div className="mt-3 p-3 rounded-lg bg-accent">
+                        <p className="font-body text-xs text-muted-foreground">
+                          💰 Please pay the delivery fee at the <strong>{d.logistics_company}</strong> office to release your item. The donor is not charged.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
           )}
-
-          <div className="mt-8 p-4 bg-accent rounded-xl">
-            <p className="font-body text-xs text-muted-foreground">
-              ⚠️ <strong>Safety Tip:</strong> For direct pickups, always meet in public places. Never share your home address with strangers.
-            </p>
-          </div>
         </div>
       </div>
       <Footer />
+    </div>
+  );
+};
+
+// Dispute history warning component
+const DisputeWarning = ({ userId }: { userId?: string }) => {
+  const count = useDisputeCount(userId);
+  if (count === 0) return null;
+  return (
+    <div className="flex items-center gap-1 mt-1">
+      <AlertTriangle className="h-3 w-3 text-destructive" />
+      <span className="font-body text-[11px] text-destructive">
+        {count} past dispute{count !== 1 ? "s" : ""} on record
+      </span>
     </div>
   );
 };

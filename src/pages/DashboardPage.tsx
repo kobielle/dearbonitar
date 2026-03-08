@@ -12,13 +12,13 @@ import { useNotifications } from "@/lib/notifications";
 const DashboardPage = () => {
   const { profile, user } = useAuth();
   const { items } = useMyItems();
-  const { deliveries } = useDeliveries();
+  const { stats: dbStats } = useDashboardStats();
   const { unreadCount } = useNotifications();
 
   const stats = [
-    { icon: Gift, label: "Items Donated", value: String(profile?.items_donated ?? items.length), color: "text-primary" },
+    { icon: Gift, label: "Completed Donations", value: String(dbStats.donated), color: "text-primary" },
     { icon: Heart, label: "Verified", value: profile?.nin_verified ? "✅" : "❌", color: "text-secondary" },
-    { icon: Star, label: "Badges", value: String(profile?.badges?.length ?? 0), color: "text-primary" },
+    { icon: Star, label: "Badges", value: String(dbStats.badges), color: "text-primary" },
     { icon: MessageCircle, label: "Unread", value: String(unreadCount), color: "text-foreground" },
   ];
 

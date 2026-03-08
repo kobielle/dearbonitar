@@ -29,6 +29,11 @@ const ItemFeedPage = () => {
   const handleRequest = async (itemId: string) => {
     if (!user) { toast.error("Please sign in to request items"); return; }
     try {
+      const allowed = await canRequestGift(user.id);
+      if (!allowed) {
+        toast.error("You've reached the limit of 3 gifts per 61 days");
+        return;
+      }
       await requestItem(itemId);
       toast.success("Item requested!");
     } catch (err: any) {

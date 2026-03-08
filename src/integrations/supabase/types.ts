@@ -73,6 +73,125 @@ export type Database = {
           },
         ]
       }
+      deliveries: {
+        Row: {
+          created_at: string | null
+          donor_id: string
+          id: string
+          item_id: string
+          logistics_company: string | null
+          recipient_id: string
+          status: string
+          tracking_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          donor_id: string
+          id?: string
+          item_id: string
+          logistics_company?: string | null
+          recipient_id: string
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          donor_id?: string
+          id?: string
+          item_id?: string
+          logistics_company?: string | null
+          recipient_id?: string
+          status?: string
+          tracking_number?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliveries_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliveries_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliveries_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donor_badges: {
+        Row: {
+          awarded_at: string | null
+          badge_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string | null
+          badge_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string | null
+          badge_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donor_spotlight: {
+        Row: {
+          admin_approved: boolean | null
+          created_at: string | null
+          id: string
+          message: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_approved?: boolean | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_approved?: boolean | null
+          created_at?: string | null
+          id?: string
+          message?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donor_spotlight_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       item_requests: {
         Row: {
           created_at: string | null
@@ -198,6 +317,47 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          read: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          read?: boolean | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          read?: boolean | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -260,6 +420,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      video_verifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          reviewer_notes: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          reviewer_notes?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          reviewer_notes?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_verifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

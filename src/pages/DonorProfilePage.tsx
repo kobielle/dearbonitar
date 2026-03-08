@@ -1,9 +1,52 @@
-import { Heart, Gift, Star, MapPin, Instagram, Twitter, Youtube, Linkedin } from "lucide-react";
+import { Heart, Gift, Star, Shield, Upload, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
+import { useDonorBadges } from "@/lib/badges";
+import { useMyItems, uploadAvatar } from "@/lib/bonitarCloud";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useRef } from "react";
+import { toast } from "sonner";
+import { Link } from "react-router-dom";
 
 const DonorProfilePage = () => {
+  const { profile, user } = useAuth();
+  const { badges } = useDonorBadges(user?.id);
+  const { items } = useMyItems();
+  const [bio, setBio] = useState(profile?.bio ?? "");
+  const [displayName, setDisplayName] = useState(profile?.display_name ?? "");
+  const [saving, setSaving] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ bio, display_name: displayName, updated_at: new Date().toISOString() })
+      .eq("id", user.id);
+    if (error) toast.error(error.message);
+    else toast.success("Profile updated!");
+    setSaving(false);
+  };
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    try {
+      const url = await uploadAvatar(file, user.id);
+      await supabase.from("profiles").update({ avatar_url: url }).eq("id", user.id);
+      toast.success("Avatar updated!");
+      window.location.reload();
+    } catch (err: any) {
+      toast.error(err.message);
+    }
+  };
+
+  const categories = [...new Set(items.map((i) => i.category))];
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -13,23 +56,37 @@ const DonorProfilePage = () => {
             <div className="bg-gradient-hero h-32" />
             <div className="px-8 pb-8 -mt-12">
               <div className="flex items-end gap-4 mb-6">
-                <div className="w-24 h-24 rounded-2xl bg-coral-light border-4 border-card flex items-center justify-center text-4xl">
-                  🤲
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-2xl bg-accent border-4 border-card flex items-center justify-center text-4xl overflow-hidden">
+                    {profile?.avatar_url ? (
+                      <img src={profile.avatar_url} alt={profile.username} className="w-full h-full object-cover" />
+                    ) : "🤲"}
+                  </div>
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </button>
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
                 </div>
                 <div className="pb-1">
                   <div className="flex items-center gap-2">
-                    <h1 className="font-display text-2xl font-bold text-foreground">@KindnessWarrior</h1>
-                    <span className="text-lg" title="Heart Badge">❤️</span>
+                    <h1 className="font-display text-2xl font-bold text-foreground">@{profile?.username}</h1>
+                    {profile?.nin_verified && <span className="text-lg" title="Verified">✅</span>}
+                    {profile?.video_verified && <span className="text-lg" title="Video Verified">🎥</span>}
                   </div>
-                  <p className="font-body text-sm text-muted-foreground">Bonitar since March 2025</p>
+                  <p className="font-body text-sm text-muted-foreground">
+                    {profile?.role === "donor" ? "Bonitar (Donor)" : "Recipient"} · Joined {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : ""}
+                  </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 mb-8">
                 {[
-                  { icon: Gift, label: "Donated", value: "47" },
-                  { icon: Heart, label: "Received", value: "2" },
-                  { icon: Star, label: "Rating", value: "5.0" },
+                  { icon: Gift, label: "Donated", value: String(profile?.items_donated ?? 0) },
+                  { icon: Heart, label: "Badges", value: String(badges.length) },
+                  { icon: Star, label: "Role", value: profile?.role ?? "donor" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-accent rounded-xl p-4 text-center">
                     <stat.icon className="h-5 w-5 text-primary mx-auto mb-2" />
@@ -39,44 +96,85 @@ const DonorProfilePage = () => {
                 ))}
               </div>
 
-              <div className="mb-8">
-                <h2 className="font-display text-lg font-semibold text-foreground mb-3">Categories Donated</h2>
-                <div className="flex flex-wrap gap-2">
-                  {["Electronics", "Books", "Clothing", "Kitchen items", "Furniture"].map((cat) => (
-                    <span key={cat} className="text-xs font-body bg-coral-light text-primary px-3 py-1 rounded-full">
-                      {cat}
-                    </span>
-                  ))}
+              {/* Edit Profile */}
+              <div className="mb-8 space-y-4">
+                <h2 className="font-display text-lg font-semibold text-foreground">Edit Profile</h2>
+                <div>
+                  <label className="font-body text-sm font-medium text-foreground block mb-1">Display Name</label>
+                  <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Your display name" />
                 </div>
+                <div>
+                  <label className="font-body text-sm font-medium text-foreground block mb-1">Bio</label>
+                  <textarea
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    className="w-full min-h-[80px] rounded-lg border border-input bg-background px-3 py-2 font-body text-sm"
+                    placeholder="Tell others about yourself..."
+                  />
+                </div>
+                <Button variant="hero" onClick={handleSave} disabled={saving}>
+                  {saving ? "Saving..." : "Save Changes"}
+                </Button>
               </div>
 
-              <div className="mb-8">
-                <h2 className="font-display text-lg font-semibold text-foreground mb-3">Social Links</h2>
-                <div className="flex gap-3">
-                  {[Instagram, Twitter, Youtube, Linkedin].map((Icon, i) => (
-                    <button key={i} className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
-                      <Icon className="h-4 w-4" />
-                    </button>
-                  ))}
+              {/* Verification Link */}
+              <div className="mb-8 p-4 bg-accent rounded-xl flex items-center gap-3">
+                <Shield className="h-5 w-5 text-primary shrink-0" />
+                <div className="flex-1">
+                  <p className="font-body text-sm text-foreground">
+                    {profile?.nin_verified ? "Your identity is verified ✅" : "Verify your identity to earn the Verified badge"}
+                  </p>
                 </div>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/verification">Verify</Link>
+                </Button>
               </div>
 
+              {/* Badges */}
+              {badges.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="font-display text-lg font-semibold text-foreground mb-3">Earned Badges</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {badges.map((b) => (
+                      <span key={b.id} className="text-xs font-body bg-accent text-accent-foreground px-3 py-1 rounded-full border border-border">
+                        {b.badge_type === "verified" ? "✅ Verified" : b.badge_type === "generous_heart" ? "❤️ Generous Heart" : b.badge_type}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Categories */}
+              {categories.length > 0 && (
+                <div className="mb-8">
+                  <h2 className="font-display text-lg font-semibold text-foreground mb-3">Categories Donated</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map((cat) => (
+                      <span key={cat} className="text-xs font-body bg-accent text-primary px-3 py-1 rounded-full">
+                        {cat}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Donations */}
               <div>
                 <h2 className="font-display text-lg font-semibold text-foreground mb-3">Recent Donations</h2>
                 <div className="space-y-3">
-                  {[
-                    { title: "Children's Books Bundle", category: "Books", date: "Mar 5, 2026" },
-                    { title: "Winter Jackets (M/L)", category: "Clothing", date: "Mar 2, 2026" },
-                    { title: "Kitchen Blender", category: "Kitchen items", date: "Feb 28, 2026" },
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-accent">
-                      <div>
-                        <p className="font-body text-sm font-medium text-foreground">{item.title}</p>
-                        <p className="font-body text-xs text-muted-foreground">{item.category}</p>
+                  {items.length === 0 ? (
+                    <p className="font-body text-sm text-muted-foreground">No donations yet.</p>
+                  ) : (
+                    items.slice(0, 5).map((item) => (
+                      <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-accent">
+                        <div>
+                          <p className="font-body text-sm font-medium text-foreground">{item.title}</p>
+                          <p className="font-body text-xs text-muted-foreground">{item.category}</p>
+                        </div>
+                        <span className="font-body text-xs text-muted-foreground">{item.status}</span>
                       </div>
-                      <span className="font-body text-xs text-muted-foreground">{item.date}</span>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </div>

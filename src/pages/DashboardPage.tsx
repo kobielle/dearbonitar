@@ -1,15 +1,25 @@
-import { Heart, Gift, MessageCircle, Star, Settings, Plus, BookOpen, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Heart, Gift, MessageCircle, Star, Settings, Plus, BookOpen, TrendingUp, Shield, Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useAuth } from "@/contexts/AuthContext";
+import { useMyItems } from "@/lib/bonitarCloud";
+import { useDeliveries } from "@/lib/deliveries";
+import { useNotifications } from "@/lib/notifications";
 
 const DashboardPage = () => {
+  const { profile, user } = useAuth();
+  const { items } = useMyItems();
+  const { deliveries } = useDeliveries();
+  const { unreadCount } = useNotifications();
+
   const stats = [
-    { icon: Gift, label: "Items Donated", value: "12", color: "text-primary" },
-    { icon: Heart, label: "Items Received", value: "3", color: "text-secondary" },
-    { icon: Star, label: "Badge", value: "❤️ Heart", color: "text-primary" },
-    { icon: MessageCircle, label: "Messages", value: "5", color: "text-charcoal" },
+    { icon: Gift, label: "Items Donated", value: String(profile?.items_donated ?? items.length), color: "text-primary" },
+    { icon: Heart, label: "Verified", value: profile?.nin_verified ? "✅" : "❌", color: "text-secondary" },
+    { icon: Star, label: "Badges", value: String(profile?.badges?.length ?? 0), color: "text-primary" },
+    { icon: MessageCircle, label: "Unread", value: String(unreadCount), color: "text-foreground" },
   ];
 
   return (
@@ -19,7 +29,9 @@ const DashboardPage = () => {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="font-display text-3xl font-bold text-foreground">Welcome back, Bonitar!</h1>
+              <h1 className="font-display text-3xl font-bold text-foreground">
+                Welcome back, {profile?.display_name || profile?.username || "Bonitar"}!
+              </h1>
               <p className="font-body text-muted-foreground">Your kindness dashboard</p>
             </div>
             <Button variant="hero" asChild>
@@ -42,29 +54,28 @@ const DashboardPage = () => {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-card rounded-xl border border-border p-6">
-              <h2 className="font-display text-lg font-semibold text-foreground mb-4">Recent Activity</h2>
-              <div className="space-y-4">
-                {[
-                  { text: "You donated 'Children's Books Bundle'", time: "2 hours ago", icon: "📚" },
-                  { text: "New message from @HopefulSoul", time: "5 hours ago", icon: "💬" },
-                  { text: "You received 'Kitchen Blender'", time: "1 day ago", icon: "🍳" },
-                  { text: "You donated 'Winter Jackets'", time: "3 days ago", icon: "🧥" },
-                ].map((activity, i) => (
-                  <div key={i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent transition-colors">
-                    <span className="text-2xl">{activity.icon}</span>
-                    <div className="flex-1">
-                      <p className="font-body text-sm text-foreground">{activity.text}</p>
-                      <p className="font-body text-xs text-muted-foreground">{activity.time}</p>
+              <h2 className="font-display text-lg font-semibold text-foreground mb-4">Your Recent Donations</h2>
+              <div className="space-y-3">
+                {items.length === 0 ? (
+                  <p className="font-body text-sm text-muted-foreground py-4 text-center">No items donated yet. Start giving!</p>
+                ) : (
+                  items.slice(0, 5).map((item) => (
+                    <div key={item.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-accent transition-colors">
+                      <span className="text-2xl">🎁</span>
+                      <div className="flex-1">
+                        <p className="font-body text-sm text-foreground">{item.title}</p>
+                        <p className="font-body text-xs text-muted-foreground">{item.category} · {item.status}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
             <div className="space-y-6">
               <div className="bg-card rounded-xl border border-border p-6">
                 <h2 className="font-display text-lg font-semibold text-foreground mb-4">Whisper of the Day</h2>
-                <div className="bg-coral-light rounded-lg p-4">
+                <div className="bg-accent rounded-lg p-4">
                   <p className="font-body text-sm text-foreground italic leading-relaxed">
                     "Someone out there smiled today because of something you gave." 💛
                   </p>
@@ -79,6 +90,8 @@ const DashboardPage = () => {
                     { to: "/journal", icon: BookOpen, label: "Journal" },
                     { to: "/chat", icon: MessageCircle, label: "Messages" },
                     { to: "/profile", icon: Settings, label: "Profile" },
+                    { to: "/verification", icon: Shield, label: "Verification" },
+                    { to: "/deliveries", icon: Package, label: "Deliveries" },
                   ].map((link) => (
                     <Link
                       key={link.to}

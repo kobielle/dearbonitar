@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, Heart } from "lucide-react";
+import { Menu, X, Heart, LogOut, User, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import NotificationBell from "@/components/NotificationBell";
+import { useAuth } from "@/contexts/AuthContext";
 import logo from "@/assets/logo.png";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, profile, logout } = useAuth();
 
   const navLinks = [
     { to: "/feed", label: "Browse Items" },
@@ -37,15 +40,38 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">Log In</Link>
-          </Button>
-          <Button variant="hero" size="sm" asChild>
-            <Link to="/signup">
-              <Heart className="h-4 w-4" />
-              Join Bonitars
-            </Link>
-          </Button>
+          {user ? (
+            <>
+              <NotificationBell />
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/dashboard">
+                  <LayoutDashboard className="h-4 w-4 mr-1" />
+                  Dashboard
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/profile">
+                  <User className="h-4 w-4 mr-1" />
+                  {profile?.username || "Profile"}
+                </Link>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={logout}>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Log In</Link>
+              </Button>
+              <Button variant="hero" size="sm" asChild>
+                <Link to="/signup">
+                  <Heart className="h-4 w-4" />
+                  Join Bonitars
+                </Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <button
@@ -69,12 +95,25 @@ const Navbar = () => {
             </Link>
           ))}
           <div className="flex gap-3 pt-2">
-            <Button variant="ghost" size="sm" asChild>
-              <Link to="/login">Log In</Link>
-            </Button>
-            <Button variant="hero" size="sm" asChild>
-              <Link to="/signup">Join Bonitars</Link>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>Dashboard</Link>
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => { logout(); setIsOpen(false); }}>
+                  Log Out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/login" onClick={() => setIsOpen(false)}>Log In</Link>
+                </Button>
+                <Button variant="hero" size="sm" asChild>
+                  <Link to="/signup" onClick={() => setIsOpen(false)}>Join Bonitars</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       )}

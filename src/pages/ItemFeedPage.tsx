@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useItems, requestItem } from "@/lib/bonitarCloud";
 import { useAuth } from "@/contexts/AuthContext";
+import { canRequestGift } from "@/lib/donations";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 

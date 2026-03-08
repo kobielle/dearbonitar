@@ -117,7 +117,34 @@ export const useDashboardStats = () => {
   return { stats, loading };
 };
 
-// ---- Actions ----
+// ---- Gift limit check ----
+
+export const useGiftEligibility = (recipientId?: string) => {
+  const [eligible, setEligible] = useState(true);
+  const [remaining, setRemaining] = useState(3);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!recipientId) { setLoading(false); return; }
+    const check = async () => {
+      const cutoff = new Date(Date.now() - 61 * 24 * 60 * 60 * 1000).toISOString();
+      const { count } = await supabase
+        .from("item_requests")
+        .select("*", { count: "exact", head: true })
+        .eq("recipient_id", recipientId)
+        .eq("donation_status", "completed")
+        .gte("recipient_confirmed_at", cutoff);
+
+      const used = count ?? 0;
+      setRemaining(Math.max(0, 3 - used));
+      setEligible(used < 3);
+      setLoading(false);
+    };
+    check();
+  }, [recipientId]);
+
+  return { eligible, remaining, loading };
+};
 
 export const canRequestGift = async (recipientId: string): Promise<boolean> => {
   const cutoff = new Date(Date.now() - 61 * 24 * 60 * 60 * 1000).toISOString();
@@ -130,6 +157,23 @@ export const canRequestGift = async (recipientId: string): Promise<boolean> => {
 
   return (count ?? 0) < 3;
 };
+
+// ---- Dispute history check ----
+
+export const useDisputeCount = (userId?: string) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase.rpc("get_dispute_count", { _user_id: userId }).then(({ data }) => {
+      setCount(data ?? 0);
+    });
+  }, [userId]);
+
+  return count;
+};
+
+// ---- Actions ----
 
 export const markDelivered = async (requestId: string) => {
   const { error } = await supabase

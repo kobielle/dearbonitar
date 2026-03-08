@@ -20,6 +20,7 @@ import SupportPage from "./pages/SupportPage";
 import GuidelinesPage from "./pages/GuidelinesPage";
 import VerificationPage from "./pages/VerificationPage";
 import DeliveriesPage from "./pages/DeliveriesPage";
+import AdminPage from "./pages/AdminPage";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/guidelines" element={<GuidelinesPage />} />
           <Route path="/verification" element={<VerificationPage />} />
           <Route path="/deliveries" element={<DeliveriesPage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -1,0 +1,180 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+export interface ItemRequest {
+  id: string;
+  item_id: string;
+  donor_id: string | null;
+  recipient_id: string;
+  status: string | null;
+  donation_status: string;
+  donor_confirmation: boolean;
+  recipient_confirmation: boolean;
+  donor_marked_at: string | null;
+  recipient_confirmed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  item?: { title: string; image_urls: string[] | null };
+  donor?: { username: string; display_name: string | null; avatar_url: string | null };
+  recipient?: { username: string; display_name: string | null; avatar_url: string | null };
+}
+
+export interface DonationDispute {
+  id: string;
+  item_request_id: string;
+  reporter_id: string;
+  description: string | null;
+  evidence: Record<string, any>;
+  created_at: string;
+}
+
+// ---- Hooks ----
+
+export const useRecipientRequests = () => {
+  const [requests, setRequests] = useState<ItemRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const { data } = await supabase
+        .from("item_requests")
+        .select("*, item:items(title, image_urls), donor:profiles!item_requests_donor_id_fkey(username, display_name, avatar_url)")
+        .eq("recipient_id", user.id)
+        .order("created_at", { ascending: false });
+
+      setRequests((data as any[]) ?? []);
+      setLoading(false);
+    };
+    fetch();
+  }, []);
+
+  return { requests, loading };
+};
+
+export const useDonorRequests = () => {
+  const [requests, setRequests] = useState<ItemRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const { data } = await supabase
+        .from("item_requests")
+        .select("*, item:items(title, image_urls), recipient:profiles!item_requests_recipient_id_fkey(username, display_name, avatar_url)")
+        .eq("donor_id", user.id)
+        .order("created_at", { ascending: false });
+
+      setRequests((data as any[]) ?? []);
+      setLoading(false);
+    };
+    fetch();
+  }, []);
+
+  return { requests, loading };
+};
+
+export const useDashboardStats = () => {
+  const [stats, setStats] = useState({ donated: 0, badges: 0, unreadNotifications: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const [donatedRes, badgesRes, notifsRes] = await Promise.all([
+        supabase
+          .from("item_requests")
+          .select("*", { count: "exact", head: true })
+          .eq("donor_id", user.id)
+          .eq("donation_status", "completed"),
+        supabase
+          .from("donor_badges")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id),
+        supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .eq("read", false),
+      ]);
+
+      setStats({
+        donated: donatedRes.count ?? 0,
+        badges: badgesRes.count ?? 0,
+        unreadNotifications: notifsRes.count ?? 0,
+      });
+      setLoading(false);
+    };
+    fetch();
+  }, []);
+
+  return { stats, loading };
+};
+
+// ---- Actions ----
+
+export const canRequestGift = async (recipientId: string): Promise<boolean> => {
+  const cutoff = new Date(Date.now() - 61 * 24 * 60 * 60 * 1000).toISOString();
+  const { count } = await supabase
+    .from("item_requests")
+    .select("*", { count: "exact", head: true })
+    .eq("recipient_id", recipientId)
+    .eq("donation_status", "completed")
+    .gte("recipient_confirmed_at", cutoff);
+
+  return (count ?? 0) < 3;
+};
+
+export const markDelivered = async (requestId: string) => {
+  const { error } = await supabase
+    .from("item_requests")
+    .update({
+      donation_status: "delivered-pending-recipient",
+      donor_confirmation: true,
+      donor_marked_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", requestId);
+  if (error) throw error;
+};
+
+export const confirmReceived = async (requestId: string) => {
+  const { error } = await supabase
+    .from("item_requests")
+    .update({
+      donation_status: "completed",
+      recipient_confirmation: true,
+      recipient_confirmed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", requestId);
+  if (error) throw error;
+};
+
+export const fileDispute = async (requestId: string, description: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { error: disputeErr } = await supabase
+    .from("donation_disputes")
+    .insert({
+      item_request_id: requestId,
+      reporter_id: user.id,
+      description,
+    });
+  if (disputeErr) throw disputeErr;
+
+  await supabase
+    .from("item_requests")
+    .update({
+      donation_status: "disputed",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", requestId);
+};

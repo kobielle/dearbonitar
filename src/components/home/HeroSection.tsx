@@ -66,23 +66,6 @@ const HeroSection = () => {
             </Button>
           </motion.div>
 
-          <motion.div
-            className="flex items-center gap-8 mt-12"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.7, delay: 0.6 }}
-          >
-            {[
-              { value: "2,500+", label: "Items Donated" },
-              { value: "1,200+", label: "Bonitars" },
-              { value: "50+", label: "Communities" },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="font-display text-2xl font-bold text-primary">{stat.value}</p>
-                <p className="font-body text-xs text-background/60">{stat.label}</p>
-              </div>
-            ))}
-          </motion.div>
         </div>
       </div>
     </section>

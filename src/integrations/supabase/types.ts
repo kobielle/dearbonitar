@@ -14,6 +14,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      appreciation_messages: {
+        Row: {
+          approved: boolean | null
+          created_at: string | null
+          id: string
+          item_request_id: string | null
+          message: string
+          recipient_id: string
+          sender_id: string
+        }
+        Insert: {
+          approved?: boolean | null
+          created_at?: string | null
+          id?: string
+          item_request_id?: string | null
+          message: string
+          recipient_id: string
+          sender_id: string
+        }
+        Update: {
+          approved?: boolean | null
+          created_at?: string | null
+          id?: string
+          item_request_id?: string | null
+          message?: string
+          recipient_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appreciation_messages_item_request_id_fkey"
+            columns: ["item_request_id"]
+            isOneToOne: false
+            referencedRelation: "item_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appreciation_messages_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appreciation_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversation_participants: {
         Row: {
           conversation_id: string

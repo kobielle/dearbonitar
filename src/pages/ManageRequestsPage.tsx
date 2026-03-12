@@ -89,7 +89,7 @@ const ManageRequestsPage = () => {
             </div>
           ) : (
             <div className="space-y-8">
-              {Object.entries(groupedByItem).map(([itemId, itemRequests]) => {
+              {Object.entries(groupedByItem).map(([itemId, itemRequests]: [string, any[]]) => {
                 const firstReq = itemRequests[0];
                 const itemTitle = firstReq?.item?.title || "Item";
                 const itemCategory = firstReq?.item?.category || "";

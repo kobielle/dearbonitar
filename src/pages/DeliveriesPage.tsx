@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { Package, Truck, CheckCircle, Clock, XCircle, AlertTriangle, ShieldAlert, MapPin } from "lucide-react";
+import { Package, Truck, CheckCircle, Clock, XCircle, AlertTriangle, ShieldAlert, MessageSquare } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useDeliveries, createDelivery, updateDeliveryStatus, type Delivery } from "@/lib/deliveries";
+import { useDeliveries, createDelivery, type Delivery } from "@/lib/deliveries";
 import { useDonorRequests, useRecipientRequests, markDelivered, confirmReceived, fileDispute, useDisputeCount } from "@/lib/donations";
+import { cancelRequest } from "@/lib/requests";
+import { sendAppreciation } from "@/lib/requests";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +14,10 @@ import { toast } from "sonner";
 
 const donationStatusConfig: Record<string, { icon: typeof Clock; label: string; color: string }> = {
   pending: { icon: Clock, label: "Pending", color: "text-secondary" },
+  approved: { icon: CheckCircle, label: "Approved", color: "text-green-600" },
+  declined: { icon: XCircle, label: "Declined", color: "text-muted-foreground" },
+  cancelled: { icon: XCircle, label: "Cancelled", color: "text-muted-foreground" },
+  expired: { icon: XCircle, label: "Expired", color: "text-muted-foreground" },
   "delivered-pending-recipient": { icon: Truck, label: "Delivered – Awaiting Confirmation", color: "text-blue-500" },
   completed: { icon: CheckCircle, label: "Completed", color: "text-green-600" },
   disputed: { icon: AlertTriangle, label: "Disputed", color: "text-destructive" },
@@ -34,6 +40,8 @@ const DeliveriesPage = () => {
   const [logisticsForm, setLogisticsForm] = useState<{ requestId: string; itemId: string; recipientId: string } | null>(null);
   const [logisticsCompany, setLogisticsCompany] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
+  const [appreciationForm, setAppreciationForm] = useState<{ donorId: string; requestId: string } | null>(null);
+  const [appreciationText, setAppreciationText] = useState("");
 
   const isDonor = profile?.role === "donor";
   const requests = isDonor ? donorReqs : recipientReqs;
@@ -55,6 +63,14 @@ const DeliveriesPage = () => {
     } catch { toast.error("Failed to confirm"); }
   };
 
+  const handleCancelRequest = async (id: string) => {
+    try {
+      await cancelRequest(id);
+      toast.success("Request cancelled");
+      window.location.reload();
+    } catch { toast.error("Failed to cancel"); }
+  };
+
   const handleDispute = async () => {
     if (!disputeId || !disputeText.trim()) return;
     try {
@@ -74,15 +90,22 @@ const DeliveriesPage = () => {
         recipient_id: logisticsForm.recipientId,
         logistics_company: logisticsCompany,
       });
-      if (trackingNumber) {
-        // Tracking number can be added later
-      }
       toast.success("Logistics delivery created! The recipient will be notified.");
       setLogisticsForm(null);
       setLogisticsCompany("");
       setTrackingNumber("");
       window.location.reload();
     } catch { toast.error("Failed to create delivery"); }
+  };
+
+  const handleSendAppreciation = async () => {
+    if (!appreciationForm || !appreciationText.trim()) return;
+    try {
+      await sendAppreciation(appreciationForm.donorId, appreciationText, appreciationForm.requestId);
+      toast.success("Thank you message sent! 💛");
+      setAppreciationForm(null);
+      setAppreciationText("");
+    } catch { toast.error("Failed to send"); }
   };
 
   return (
@@ -128,7 +151,6 @@ const DeliveriesPage = () => {
                         <p className="font-body text-xs text-muted-foreground">
                           {isDonor ? "To" : "From"}: {otherUser?.display_name || otherUser?.username || "Unknown"}
                         </p>
-                        {/* Dispute history warning */}
                         <DisputeWarning userId={otherUserId ?? undefined} />
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -138,7 +160,8 @@ const DeliveriesPage = () => {
                     </div>
 
                     <div className="flex gap-2 flex-wrap">
-                      {isDonor && r.donation_status === "pending" && (
+                      {/* Donor actions */}
+                      {isDonor && (r.donation_status === "pending" || r.donation_status === "approved") && (
                         <>
                           <Button size="sm" variant="default" onClick={() => handleMarkDelivered(r.id)}>
                             Mark as Delivered
@@ -152,6 +175,8 @@ const DeliveriesPage = () => {
                           </Button>
                         </>
                       )}
+
+                      {/* Recipient actions */}
                       {!isDonor && r.donation_status === "delivered-pending-recipient" && (
                         <>
                           <Button size="sm" variant="default" onClick={() => handleConfirmReceived(r.id)}>
@@ -161,6 +186,24 @@ const DeliveriesPage = () => {
                             ❌ Not Received
                           </Button>
                         </>
+                      )}
+
+                      {/* Cancel button for recipients with pending requests */}
+                      {!isDonor && (r.donation_status === "pending" || r.donation_status === "approved") && (
+                        <Button size="sm" variant="ghost" onClick={() => handleCancelRequest(r.id)}>
+                          Cancel Request
+                        </Button>
+                      )}
+
+                      {/* Thank you button for completed donations */}
+                      {!isDonor && r.donation_status === "completed" && r.donor_id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setAppreciationForm({ donorId: r.donor_id!, requestId: r.id })}
+                        >
+                          <MessageSquare className="h-3 w-3 mr-1" /> Say Thank You
+                        </Button>
                       )}
                     </div>
 
@@ -201,6 +244,24 @@ const DeliveriesPage = () => {
                         <div className="flex gap-2">
                           <Button size="sm" variant="destructive" onClick={handleDispute}>Submit Dispute</Button>
                           <Button size="sm" variant="ghost" onClick={() => { setDisputeId(null); setDisputeText(""); }}>Cancel</Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Appreciation form */}
+                    {appreciationForm?.requestId === r.id && (
+                      <div className="mt-3 space-y-2 p-3 rounded-lg bg-accent">
+                        <p className="font-body text-sm font-medium text-foreground">💛 Send a Thank You</p>
+                        <textarea
+                          className="w-full p-2 rounded-lg border border-border bg-background text-foreground font-body text-sm resize-none"
+                          placeholder="Write your thank you message..."
+                          rows={3}
+                          value={appreciationText}
+                          onChange={(e) => setAppreciationText(e.target.value)}
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="default" onClick={handleSendAppreciation}>Send</Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setAppreciationForm(null); setAppreciationText(""); }}>Cancel</Button>
                         </div>
                       </div>
                     )}
@@ -246,7 +307,6 @@ const DeliveriesPage = () => {
                         {formatDistanceToNow(new Date(d.created_at), { addSuffix: true })}
                       </span>
                     </div>
-                    {/* Payment notice for recipient */}
                     {d.status === "pending" && !isDonor && (
                       <div className="mt-3 p-3 rounded-lg bg-accent">
                         <p className="font-body text-xs text-muted-foreground">

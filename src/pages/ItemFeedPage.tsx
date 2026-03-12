@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useItems, requestItem } from "@/lib/bonitarCloud";
+import { useItems } from "@/lib/bonitarCloud";
 import { useAuth } from "@/contexts/AuthContext";
-import { canRequestGift, useGiftEligibility } from "@/lib/donations";
+import { useGiftEligibility } from "@/lib/donations";
+import { useUserRequests, requestItemEnhanced } from "@/lib/requests";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
@@ -30,6 +31,8 @@ const ItemFeedPage = () => {
   const { eligible, remaining, loading: eligLoading } = useGiftEligibility(
     isRecipient ? user?.id : undefined
   );
+  const { requestedItemIds, activeCount, loading: reqLoading } = useUserRequests();
+  const [requestingId, setRequestingId] = useState<string | null>(null);
 
   const filteredItems = searchQuery
     ? items.filter(
@@ -42,17 +45,24 @@ const ItemFeedPage = () => {
   const handleRequest = async (itemId: string) => {
     if (!user) { toast.error("Please sign in to request items"); return; }
     if (!isRecipient) { toast.error("Only recipients can request items"); return; }
+    setRequestingId(itemId);
     try {
-      const allowed = await canRequestGift(user.id);
-      if (!allowed) {
-        toast.error("You've reached the limit of 3 gifts per 61 days. Your eligibility resets automatically.");
-        return;
-      }
-      await requestItem(itemId);
-      toast.success("Item requested! The donor will be notified.");
+      await requestItemEnhanced(itemId);
+      toast.success("Item requested! The Bonitar will be notified.");
+      // Update local state
+      requestedItemIds.add(itemId);
     } catch (err: any) {
       toast.error(err.message || "Request failed");
+    } finally {
+      setRequestingId(null);
     }
+  };
+
+  const getButtonState = (itemId: string) => {
+    if (requestedItemIds.has(itemId)) return "requested";
+    if (!eligible) return "gift-limit";
+    if (activeCount >= 5) return "active-limit";
+    return "available";
   };
 
   return (
@@ -72,7 +82,8 @@ const ItemFeedPage = () => {
                 <>
                   <Heart className="h-5 w-5 text-primary shrink-0" />
                   <p className="font-body text-sm text-foreground">
-                    You can request <strong>{remaining}</strong> more gift{remaining !== 1 ? "s" : ""} in the current 61-day period.
+                    You can receive <strong>{remaining}</strong> more gift{remaining !== 1 ? "s" : ""} in the current 61-day period.
+                    {activeCount > 0 && <span className="text-muted-foreground"> · {activeCount}/5 active requests</span>}
                   </p>
                 </>
               ) : (
@@ -83,6 +94,16 @@ const ItemFeedPage = () => {
                   </p>
                 </>
               )}
+            </div>
+          )}
+
+          {/* Active request limit warning */}
+          {isRecipient && activeCount >= 5 && (
+            <div className="mb-6 p-4 rounded-xl bg-secondary/10 border border-secondary/20 flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-secondary shrink-0" />
+              <p className="font-body text-sm text-foreground">
+                You have <strong>5 active requests</strong>. Complete or cancel existing requests before making new ones.
+              </p>
             </div>
           )}
 
@@ -120,48 +141,59 @@ const ItemFeedPage = () => {
             <div className="text-center py-12 text-muted-foreground font-body">No items found. Be the first to donate!</div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
-                <div key={item.id} className="group bg-card rounded-xl border border-border hover:shadow-elevated transition-all duration-300 overflow-hidden cursor-pointer">
-                  <div className="h-44 bg-accent flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-300">
-                    {item.image_urls?.length ? (
-                      <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover" />
-                    ) : (
-                      categoryEmojis[item.category] || "📦"
-                    )}
-                  </div>
-                  <div className="p-5">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-body font-medium text-primary bg-coral-light px-2.5 py-0.5 rounded-full">{item.category}</span>
-                      <Heart className="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors" />
-                    </div>
-                    <h3 className="font-display text-base font-semibold text-foreground mb-3">{item.title}</h3>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground font-body">
-                      {item.pickup_location && (
-                        <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {item.pickup_location}</span>
+              {filteredItems.map((item) => {
+                const btnState = getButtonState(item.id);
+                return (
+                  <div key={item.id} className="group bg-card rounded-xl border border-border hover:shadow-elevated transition-all duration-300 overflow-hidden cursor-pointer">
+                    <div className="h-44 bg-accent flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-300">
+                      {item.image_urls?.length ? (
+                        <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover" />
+                      ) : (
+                        categoryEmojis[item.category] || "📦"
                       )}
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                      </span>
                     </div>
-                    {isRecipient && (
-                      <Button
-                        variant="warmOutline"
-                        size="sm"
-                        className="w-full mt-4"
-                        onClick={() => handleRequest(item.id)}
-                        disabled={!eligible}
-                      >
-                        {eligible ? "Request Item" : "Limit Reached"}
-                      </Button>
-                    )}
-                    {!user && (
-                      <Button variant="warmOutline" size="sm" className="w-full mt-4" onClick={() => handleRequest(item.id)}>
-                        Request Item
-                      </Button>
-                    )}
+                    <div className="p-5">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-body font-medium text-primary bg-coral-light px-2.5 py-0.5 rounded-full">{item.category}</span>
+                        <Heart className="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors" />
+                      </div>
+                      <h3 className="font-display text-base font-semibold text-foreground mb-3">{item.title}</h3>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground font-body">
+                        {item.pickup_location && (
+                          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {item.pickup_location}</span>
+                        )}
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
+                      {isRecipient && (
+                        <Button
+                          variant={btnState === "requested" ? "outline" : "warmOutline"}
+                          size="sm"
+                          className="w-full mt-4"
+                          onClick={() => handleRequest(item.id)}
+                          disabled={btnState !== "available" || requestingId === item.id}
+                        >
+                          {requestingId === item.id
+                            ? "Requesting..."
+                            : btnState === "requested"
+                            ? "✓ Requested"
+                            : btnState === "gift-limit"
+                            ? "Gift Limit Reached"
+                            : btnState === "active-limit"
+                            ? "5 Request Limit Reached"
+                            : "Request Item"}
+                        </Button>
+                      )}
+                      {!user && (
+                        <Button variant="warmOutline" size="sm" className="w-full mt-4" onClick={() => handleRequest(item.id)}>
+                          Request Item
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

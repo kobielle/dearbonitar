@@ -87,6 +87,7 @@ const DashboardPage = () => {
                 <div className="space-y-2">
                   {[
                     { to: "/feed", icon: TrendingUp, label: "Browse Items" },
+                    { to: "/manage-requests", icon: Gift, label: "Manage Requests" },
                     { to: "/journal", icon: BookOpen, label: "Journal" },
                     { to: "/chat", icon: MessageCircle, label: "Messages" },
                     { to: "/profile", icon: Settings, label: "Profile" },

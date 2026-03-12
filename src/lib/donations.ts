@@ -117,7 +117,7 @@ export const useDashboardStats = () => {
   return { stats, loading };
 };
 
-// ---- Gift limit check ----
+// ---- Gift limit check (includes donor confirmation count) ----
 
 export const useGiftEligibility = (recipientId?: string) => {
   const [eligible, setEligible] = useState(true);
@@ -128,14 +128,27 @@ export const useGiftEligibility = (recipientId?: string) => {
     if (!recipientId) { setLoading(false); return; }
     const check = async () => {
       const cutoff = new Date(Date.now() - 61 * 24 * 60 * 60 * 1000).toISOString();
-      const { count } = await supabase
+
+      // Count completed donations
+      const { count: completedCount } = await supabase
         .from("item_requests")
         .select("*", { count: "exact", head: true })
         .eq("recipient_id", recipientId)
         .eq("donation_status", "completed")
         .gte("recipient_confirmed_at", cutoff);
 
-      const used = count ?? 0;
+      // Count unique donors who marked delivery (even without recipient confirmation)
+      const { data: donorConfirmed } = await supabase
+        .from("item_requests")
+        .select("donor_id")
+        .eq("recipient_id", recipientId)
+        .eq("donor_confirmation", true)
+        .gte("donor_marked_at", cutoff);
+
+      const uniqueDonorCount = new Set((donorConfirmed ?? []).map((r: any) => r.donor_id)).size;
+
+      // Use the higher of the two counts (donor confirmations from 3+ different donors also count)
+      const used = Math.max(completedCount ?? 0, uniqueDonorCount >= 3 ? uniqueDonorCount : completedCount ?? 0);
       setRemaining(Math.max(0, 3 - used));
       setEligible(used < 3);
       setLoading(false);
@@ -148,14 +161,24 @@ export const useGiftEligibility = (recipientId?: string) => {
 
 export const canRequestGift = async (recipientId: string): Promise<boolean> => {
   const cutoff = new Date(Date.now() - 61 * 24 * 60 * 60 * 1000).toISOString();
-  const { count } = await supabase
+
+  const { count: completedCount } = await supabase
     .from("item_requests")
     .select("*", { count: "exact", head: true })
     .eq("recipient_id", recipientId)
     .eq("donation_status", "completed")
     .gte("recipient_confirmed_at", cutoff);
 
-  return (count ?? 0) < 3;
+  const { data: donorConfirmed } = await supabase
+    .from("item_requests")
+    .select("donor_id")
+    .eq("recipient_id", recipientId)
+    .eq("donor_confirmation", true)
+    .gte("donor_marked_at", cutoff);
+
+  const uniqueDonorCount = new Set((donorConfirmed ?? []).map((r: any) => r.donor_id)).size;
+  const used = Math.max(completedCount ?? 0, uniqueDonorCount >= 3 ? uniqueDonorCount : completedCount ?? 0);
+  return used < 3;
 };
 
 // ---- Dispute history check ----
@@ -176,6 +199,12 @@ export const useDisputeCount = (userId?: string) => {
 // ---- Actions ----
 
 export const markDelivered = async (requestId: string) => {
+  const { data: request } = await supabase
+    .from("item_requests")
+    .select("recipient_id, item:items(title)")
+    .eq("id", requestId)
+    .single();
+
   const { error } = await supabase
     .from("item_requests")
     .update({
@@ -186,9 +215,25 @@ export const markDelivered = async (requestId: string) => {
     })
     .eq("id", requestId);
   if (error) throw error;
+
+  // Notify recipient
+  if (request) {
+    await supabase.from("notifications").insert({
+      user_id: (request as any).recipient_id,
+      type: "delivery_update",
+      title: "Item Delivered! 📦",
+      content: `The Bonitar marked "${(request as any).item?.title}" as delivered. Please confirm when you receive it.`,
+    });
+  }
 };
 
 export const confirmReceived = async (requestId: string) => {
+  const { data: request } = await supabase
+    .from("item_requests")
+    .select("donor_id, item:items(title)")
+    .eq("id", requestId)
+    .single();
+
   const { error } = await supabase
     .from("item_requests")
     .update({
@@ -199,6 +244,16 @@ export const confirmReceived = async (requestId: string) => {
     })
     .eq("id", requestId);
   if (error) throw error;
+
+  // Notify donor
+  if (request && (request as any).donor_id) {
+    await supabase.from("notifications").insert({
+      user_id: (request as any).donor_id,
+      type: "delivery_update",
+      title: "Receipt Confirmed! 🎉",
+      content: `The recipient confirmed they received "${(request as any).item?.title}". Thank you, Bonitar!`,
+    });
+  }
 };
 
 export const fileDispute = async (requestId: string, description: string) => {
@@ -221,4 +276,12 @@ export const fileDispute = async (requestId: string, description: string) => {
       updated_at: new Date().toISOString(),
     })
     .eq("id", requestId);
+
+  // Notify admin (insert notification for admin action)
+  await supabase.from("notifications").insert({
+    user_id: user.id,
+    type: "dispute",
+    title: "Dispute Filed",
+    content: "Your dispute has been submitted and will be reviewed by our team.",
+  });
 };

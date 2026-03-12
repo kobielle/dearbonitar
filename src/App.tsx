@@ -21,6 +21,7 @@ import GuidelinesPage from "./pages/GuidelinesPage";
 import VerificationPage from "./pages/VerificationPage";
 import DeliveriesPage from "./pages/DeliveriesPage";
 import AdminPage from "./pages/AdminPage";
+import ManageRequestsPage from "./pages/ManageRequestsPage";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/feed" element={<ItemFeedPage />} />
           <Route path="/post-item" element={<PostItemPage />} />
+          <Route path="/manage-requests" element={<ManageRequestsPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/journal" element={<JournalPage />} />
           <Route path="/profile" element={<DonorProfilePage />} />

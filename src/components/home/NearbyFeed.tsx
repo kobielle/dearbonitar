@@ -83,6 +83,7 @@ const NearbyFeed = () => {
                   </div>
                 </div>
               </motion.div>
+              </Link>
             ))}
           </div>
         )}

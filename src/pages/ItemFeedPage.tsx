@@ -168,6 +168,7 @@ const ItemFeedPage = () => {
                           <Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
                         </span>
                       </div>
+                    </Link>
                       {isRecipient && (
                         <Button
                           variant={btnState === "requested" ? "outline" : "warmOutline"}

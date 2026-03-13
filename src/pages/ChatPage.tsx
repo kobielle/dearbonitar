@@ -72,6 +72,12 @@ const ChatPage = () => {
             </div>
           ) : (
             <>
+              {/* Mobile back button */}
+              <div className="md:hidden p-3 border-b border-border">
+                <button onClick={() => setSelectedChat(null)} className="flex items-center gap-1 text-sm text-muted-foreground font-body">
+                  ← Back to conversations
+                </button>
+              </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {msgsLoading ? (
                   <p className="text-sm text-muted-foreground font-body">Loading messages...</p>

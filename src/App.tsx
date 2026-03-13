@@ -22,6 +22,7 @@ import VerificationPage from "./pages/VerificationPage";
 import DeliveriesPage from "./pages/DeliveriesPage";
 import AdminPage from "./pages/AdminPage";
 import ManageRequestsPage from "./pages/ManageRequestsPage";
+import ItemDetailPage from "./pages/ItemDetailPage";
 
 const queryClient = new QueryClient();
 

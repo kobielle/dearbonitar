@@ -2,6 +2,7 @@ import { useState } from "react";
 import { MapPin, Search, Heart, Clock, AlertTriangle, ShieldAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useItems } from "@/lib/bonitarCloud";

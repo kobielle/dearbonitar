@@ -18,9 +18,13 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
+    let userId: string | null = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const init = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
+      userId = user.id;
 
       const { data } = await supabase
         .from("notifications")
@@ -33,24 +37,24 @@ export const useNotifications = () => {
       setNotifications(notifs);
       setUnreadCount(notifs.filter((n) => !n.read).length);
       setLoading(false);
+
+      // Realtime subscription filtered to this user
+      channel = supabase
+        .channel(`user-notifications-${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+          (payload) => {
+            const newNotif = payload.new as Notification;
+            setNotifications((prev) => [newNotif, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+          }
+        )
+        .subscribe();
     };
-    fetch();
+    init();
 
-    // Realtime subscription
-    const channel = supabase
-      .channel("user-notifications")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications" },
-        (payload) => {
-          const newNotif = payload.new as Notification;
-          setNotifications((prev) => [newNotif, ...prev]);
-          setUnreadCount((prev) => prev + 1);
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
   const markAsRead = async (notificationId: string) => {

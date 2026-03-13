@@ -65,7 +65,7 @@ const ChatPage = () => {
         </div>
 
         {/* Chat area */}
-        <div className="flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col ${!selectedChat ? "hidden md:flex" : "flex"}`}>
           {!selectedChat ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground font-body">
               Select a conversation to start chatting

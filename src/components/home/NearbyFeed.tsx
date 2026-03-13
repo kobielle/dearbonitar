@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { MapPin, Heart, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useItems } from "@/lib/bonitarCloud";
 import { formatDistanceToNow } from "date-fns";

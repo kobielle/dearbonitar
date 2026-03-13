@@ -37,7 +37,7 @@ interface Dispute {
 }
 
 const AdminPage = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [tab, setTab] = useState<"verifications" | "spotlights" | "disputes">("verifications");
   const [verifications, setVerifications] = useState<Verification[]>([]);
   const [spotlights, setSpotlights] = useState<SpotlightSubmission[]>([]);
@@ -46,13 +46,29 @@ const AdminPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;
+    if (!user) { setLoading(false); return; }
     supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => {
       setIsAdmin(!!data);
       if (data) fetchAll();
       else setLoading(false);
     });
-  }, [user]);
+  }, [user, authLoading]);
+
+  // Redirect unauthenticated users
+  if (!authLoading && !user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-20 pb-12 text-center">
+          <Shield className="h-12 w-12 text-destructive mx-auto mb-4" />
+          <h1 className="font-display text-2xl font-bold text-foreground">Authentication Required</h1>
+          <p className="font-body text-muted-foreground mt-2">Please log in to access this page.</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   const fetchAll = async () => {
     setLoading(true);

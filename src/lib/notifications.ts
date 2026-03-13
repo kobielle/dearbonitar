@@ -36,12 +36,12 @@ export const useNotifications = () => {
     };
     fetch();
 
-    // Realtime subscription
+    // Realtime subscription - filter to current user's notifications
     const channel = supabase
       .channel("user-notifications")
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications" },
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user?.id}` },
         (payload) => {
           const newNotif = payload.new as Notification;
           setNotifications((prev) => [newNotif, ...prev]);

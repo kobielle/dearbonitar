@@ -146,34 +146,36 @@ const ItemFeedPage = () => {
                 const btnState = getButtonState(item.id);
                 return (
                   <div key={item.id} className="group bg-card rounded-xl border border-border hover:shadow-elevated transition-all duration-300 overflow-hidden">
-                    <Link to={`/item/${item.id}`} className="cursor-pointer">
-                    <div className="h-44 bg-accent flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-300">
-                      {item.image_urls?.length ? (
-                        <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover" />
-                      ) : (
-                        categoryEmojis[item.category] || "📦"
-                      )}
-                    </div>
-                    <div className="p-5">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-body font-medium text-primary bg-coral-light px-2.5 py-0.5 rounded-full">{item.category}</span>
-                        <Heart className="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors" />
-                      </div>
-                      <h3 className="font-display text-base font-semibold text-foreground mb-3">{item.title}</h3>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground font-body">
-                        {item.pickup_location && (
-                          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {item.pickup_location}</span>
+                    <Link to={`/item/${item.id}`} className="block cursor-pointer">
+                      <div className="h-44 bg-accent flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-300">
+                        {item.image_urls?.length ? (
+                          <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover" />
+                        ) : (
+                          categoryEmojis[item.category] || "📦"
                         )}
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
-                        </span>
+                      </div>
+                      <div className="p-5 pb-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-body font-medium text-primary bg-coral-light px-2.5 py-0.5 rounded-full">{item.category}</span>
+                          <Heart className="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors" />
+                        </div>
+                        <h3 className="font-display text-base font-semibold text-foreground mb-3">{item.title}</h3>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground font-body">
+                          {item.pickup_location && (
+                            <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {item.pickup_location}</span>
+                          )}
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                          </span>
+                        </div>
                       </div>
                     </Link>
+                    <div className="px-5 pb-5">
                       {isRecipient && (
                         <Button
                           variant={btnState === "requested" ? "outline" : "warmOutline"}
                           size="sm"
-                          className="w-full mt-4"
+                          className="w-full mt-2"
                           onClick={() => handleRequest(item.id)}
                           disabled={btnState !== "available" || requestingId === item.id}
                         >
@@ -189,7 +191,7 @@ const ItemFeedPage = () => {
                         </Button>
                       )}
                       {!user && (
-                        <Button variant="warmOutline" size="sm" className="w-full mt-4" onClick={() => handleRequest(item.id)}>
+                        <Button variant="warmOutline" size="sm" className="w-full mt-2" onClick={() => handleRequest(item.id)}>
                           Request Item
                         </Button>
                       )}

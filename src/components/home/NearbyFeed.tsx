@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { MapPin, Heart, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useItems } from "@/lib/bonitarCloud";
 import { formatDistanceToNow } from "date-fns";
@@ -44,8 +44,8 @@ const NearbyFeed = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayItems.map((item, i) => (
+              <Link to={`/item/${item.id}`} key={item.id}>
               <motion.div
-                key={item.id}
                 className="group bg-card rounded-xl border border-border hover:shadow-elevated transition-all duration-300 overflow-hidden cursor-pointer"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -83,6 +83,7 @@ const NearbyFeed = () => {
                   </div>
                 </div>
               </motion.div>
+              </Link>
             ))}
           </div>
         )}

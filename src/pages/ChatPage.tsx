@@ -32,9 +32,9 @@ const ChatPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="pt-16 h-screen flex">
+      <div className="pt-16 h-screen flex flex-col md:flex-row">
         {/* Sidebar */}
-        <div className="w-80 border-r border-border bg-card flex flex-col">
+        <div className={`${selectedChat ? "hidden md:flex" : "flex"} w-full md:w-80 border-r border-border bg-card flex-col`}>
           <div className="p-4 border-b border-border">
             <h2 className="font-display text-lg font-semibold text-foreground mb-3">Messages</h2>
             <div className="relative">
@@ -65,13 +65,19 @@ const ChatPage = () => {
         </div>
 
         {/* Chat area */}
-        <div className="flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col ${!selectedChat ? "hidden md:flex" : "flex"}`}>
           {!selectedChat ? (
             <div className="flex-1 flex items-center justify-center text-muted-foreground font-body">
               Select a conversation to start chatting
             </div>
           ) : (
             <>
+              {/* Mobile back button */}
+              <div className="md:hidden p-3 border-b border-border">
+                <button onClick={() => setSelectedChat(null)} className="flex items-center gap-1 text-sm text-muted-foreground font-body">
+                  ← Back to conversations
+                </button>
+              </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {msgsLoading ? (
                   <p className="text-sm text-muted-foreground font-body">Loading messages...</p>

@@ -145,7 +145,8 @@ const ItemFeedPage = () => {
               {filteredItems.map((item) => {
                 const btnState = getButtonState(item.id);
                 return (
-                  <div key={item.id} className="group bg-card rounded-xl border border-border hover:shadow-elevated transition-all duration-300 overflow-hidden cursor-pointer">
+                  <div key={item.id} className="group bg-card rounded-xl border border-border hover:shadow-elevated transition-all duration-300 overflow-hidden">
+                    <Link to={`/item/${item.id}`} className="cursor-pointer">
                     <div className="h-44 bg-accent flex items-center justify-center text-5xl group-hover:scale-105 transition-transform duration-300">
                       {item.image_urls?.length ? (
                         <img src={item.image_urls[0]} alt={item.title} className="w-full h-full object-cover" />

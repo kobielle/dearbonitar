@@ -32,9 +32,9 @@ const ChatPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="pt-16 h-screen flex">
+      <div className="pt-16 h-screen flex flex-col md:flex-row">
         {/* Sidebar */}
-        <div className="w-80 border-r border-border bg-card flex flex-col">
+        <div className={`${selectedChat ? "hidden md:flex" : "flex"} w-full md:w-80 border-r border-border bg-card flex-col`}>
           <div className="p-4 border-b border-border">
             <h2 className="font-display text-lg font-semibold text-foreground mb-3">Messages</h2>
             <div className="relative">

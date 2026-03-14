@@ -15,7 +15,7 @@ const steps = [
   {
     icon: MessageCircle,
     title: "Connect Safely",
-    description: "Chat with donors or recipients through our secure messaging system.",
+    description: "Chat with Bonitars or recipients through our secure messaging system.",
   },
   {
     icon: Heart,

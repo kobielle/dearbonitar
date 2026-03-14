@@ -169,7 +169,7 @@ const ItemDetailPage = () => {
                       {item.donor.display_name || `@${item.donor.username}`}
                     </p>
                     <p className="font-body text-xs text-muted-foreground">
-                      {item.donor.items_donated || 0} items donated
+                      {item.donor.items_donated || 0} items given
                     </p>
                   </div>
                 </div>

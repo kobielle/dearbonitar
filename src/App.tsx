@@ -21,6 +21,7 @@ import GuidelinesPage from "./pages/GuidelinesPage";
 import VerificationPage from "./pages/VerificationPage";
 import DeliveriesPage from "./pages/DeliveriesPage";
 import AdminPage from "./pages/AdminPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
 import ManageRequestsPage from "./pages/ManageRequestsPage";
 import ItemDetailPage from "./pages/ItemDetailPage";
 
@@ -51,8 +52,13 @@ const App = () => (
           <Route path="/guidelines" element={<GuidelinesPage />} />
           <Route path="/verification" element={<VerificationPage />} />
           <Route path="/deliveries" element={<DeliveriesPage />} />
-          <Route path="/secure-admin-dashboard" element={<AdminPage />} />
+          <Route path="/admin-login" element={<AdminLoginPage />} />
+          <Route path="/control-room-b0n1t4r-x9k2" element={<AdminPage />} />
+          {/* Block all common admin paths */}
           <Route path="/admin" element={<NotFound />} />
+          <Route path="/admin-dashboard" element={<NotFound />} />
+          <Route path="/admin-panel" element={<NotFound />} />
+          <Route path="/secure-admin-dashboard" element={<NotFound />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

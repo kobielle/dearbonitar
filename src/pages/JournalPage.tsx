@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 
 const sections = [
   { id: "kindness", label: "Kindness Moments", icon: Heart },
-  { id: "spotlight", label: "Donor Spotlight", icon: Users },
+  { id: "spotlight", label: "Bonitar Spotlight", icon: Users },
   { id: "stories", label: "Community Stories", icon: BookOpen },
 ];
 

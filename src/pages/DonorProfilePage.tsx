@@ -97,7 +97,7 @@ const DonorProfilePage = () => {
                 {[
                   { icon: Gift, label: "Donated", value: String(profile?.items_donated ?? 0) },
                   { icon: Heart, label: "Badges", value: String(badges.length) },
-                  { icon: Star, label: "Role", value: isDonor ? "Bonitar" : profile?.role ?? "donor" },
+                  { icon: Star, label: "Role", value: isDonor ? "Bonitar" : "Recipient" },
                 ].map((stat) => (
                   <div key={stat.label} className="bg-accent rounded-xl p-4 text-center">
                     <stat.icon className="h-5 w-5 text-primary mx-auto mb-2" />

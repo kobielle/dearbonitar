@@ -53,7 +53,7 @@ const DonorSpotlightPage = () => {
             </motion.div>
           </div>
 
-          {/* Spotlight Submission Form (donors only) */}
+          {/* Spotlight Submission Form (Bonitars only) */}
           {user && isDonor && (
             <div className="max-w-2xl mx-auto mb-12 bg-card rounded-2xl border border-border p-6 shadow-card">
               <h2 className="font-display text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -61,7 +61,7 @@ const DonorSpotlightPage = () => {
                 Submit Your Spotlight Story
               </h2>
               <p className="font-body text-sm text-muted-foreground mb-4">
-                Share your experience as a Bonitar donor. Approved entries will be featured on this page!
+                Share your experience as a Bonitar. Approved entries will be featured on this page!
               </p>
               <textarea
                 value={message}
@@ -122,12 +122,12 @@ const DonorSpotlightPage = () => {
             </div>
           )}
 
-          {/* Top Donors */}
-          <h2 className="font-display text-xl font-semibold text-foreground mb-6 text-center">🏆 Top Donors</h2>
+          {/* Top Bonitars */}
+          <h2 className="font-display text-xl font-semibold text-foreground mb-6 text-center">🏆 Top Bonitars</h2>
           {loading ? (
             <div className="text-center py-12 text-muted-foreground font-body">Loading spotlights...</div>
           ) : donors.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground font-body">No donors yet. Start donating to be featured!</div>
+            <div className="text-center py-12 text-muted-foreground font-body">No Bonitars yet. Start donating to be featured!</div>
           ) : (
             <div className="space-y-8 max-w-3xl mx-auto">
               {donors.map((donor, i) => (
@@ -140,7 +140,7 @@ const DonorSpotlightPage = () => {
                 >
                   {i === 0 && (
                     <span className="inline-flex items-center gap-1 text-xs font-body font-medium text-primary bg-card px-3 py-1 rounded-full mb-4">
-                      <Star className="h-3 w-3 fill-current" /> #1 Donor
+                      <Star className="h-3 w-3 fill-current" /> #1 Bonitar
                     </span>
                   )}
                   <div className="flex items-start gap-6">

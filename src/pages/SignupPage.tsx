@@ -48,7 +48,7 @@ const SignupPage = () => {
           <div className="flex gap-2 mb-6">
             {(["donor", "recipient"] as const).map((r) => (
               <button key={r} onClick={() => setRole(r)} className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-body font-medium transition-all ${role === r ? "bg-primary text-primary-foreground shadow-soft" : "bg-accent text-muted-foreground hover:text-foreground"}`}>
-                {r === "donor" ? "🤲 Donor" : "🙏 Recipient"}
+                {r === "donor" ? "🤲 Bonitar" : "🙏 Recipient"}
               </button>
             ))}
           </div>

@@ -310,7 +310,7 @@ const DeliveriesPage = () => {
                     {d.status === "pending" && !isDonor && (
                       <div className="mt-3 p-3 rounded-lg bg-accent">
                         <p className="font-body text-xs text-muted-foreground">
-                          💰 Please pay the delivery fee at the <strong>{d.logistics_company}</strong> office to release your item. The donor is not charged.
+                          💰 Please pay the delivery fee at the <strong>{d.logistics_company}</strong> office to release your item. The Bonitar is not charged.
                         </p>
                       </div>
                     )}

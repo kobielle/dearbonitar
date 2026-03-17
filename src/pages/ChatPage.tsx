@@ -1,5 +1,5 @@
 import { Send, Search, ArrowLeft, MessageSquare, AlertTriangle } from "lucide-react";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, type FormEvent } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";

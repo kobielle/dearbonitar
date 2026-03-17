@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { createConversation } from "@/lib/bonitarCloud";
+import { createOrGetConversation } from "@/lib/bonitarCloud";
 
 // Track which items the current user has already requested + active count
 export const useUserRequests = () => {
@@ -10,12 +10,26 @@ export const useUserRequests = () => {
 
   useEffect(() => {
     const fetch = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { setLoading(false); return; }
-      const { data } = await supabase
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      const { data, error } = await supabase
         .from("item_requests")
         .select("item_id, donation_status")
         .eq("recipient_id", user.id);
+
+      if (error) {
+        console.error("[requests] failed to load current user requests", error);
+        setLoading(false);
+        return;
+      }
+
       const all = data ?? [];
       setRequestedItemIds(new Set(all.map((r: any) => r.item_id)));
       setActiveCount(
@@ -25,42 +39,61 @@ export const useUserRequests = () => {
       );
       setLoading(false);
     };
+
     fetch();
   }, []);
 
   return { requestedItemIds, activeCount, loading };
 };
 
-// Enhanced request item: checks limits, auto-creates chat, notifies donor
+// Enhanced request item: checks limits, auto-creates chat, notifies Bonitar
 export const requestItemEnhanced = async (itemId: string) => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) throw new Error("Not authenticated");
 
   // Check active request limit (5)
-  const { count: activeCount } = await supabase
+  const { count: activeCount, error: activeError } = await supabase
     .from("item_requests")
     .select("*", { count: "exact", head: true })
     .eq("recipient_id", user.id)
     .in("donation_status", ["pending", "approved", "delivered-pending-recipient"]);
 
+  if (activeError) {
+    console.error("[requests] active request count failed", activeError);
+    throw activeError;
+  }
+
   if ((activeCount ?? 0) >= 5) throw new Error("You can only have 5 active requests at a time.");
 
   // Check if already requested
-  const { count: existingCount } = await supabase
+  const { count: existingCount, error: existingError } = await supabase
     .from("item_requests")
     .select("*", { count: "exact", head: true })
     .eq("recipient_id", user.id)
     .eq("item_id", itemId)
     .in("donation_status", ["pending", "approved"]);
 
+  if (existingError) {
+    console.error("[requests] duplicate request check failed", existingError);
+    throw existingError;
+  }
+
   if ((existingCount ?? 0) > 0) throw new Error("You have already requested this item.");
 
   // Get item info
-  const { data: item } = await supabase
+  const { data: item, error: itemError } = await supabase
     .from("items")
     .select("donor_id, title")
     .eq("id", itemId)
     .single();
+
+  if (itemError) {
+    console.error("[requests] item fetch failed", itemError);
+    throw itemError;
+  }
 
   if (!item) throw new Error("Item not found");
 
@@ -71,46 +104,69 @@ export const requestItemEnhanced = async (itemId: string) => {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("[requests] request creation failed", error);
+    throw error;
+  }
 
-  // Auto-create conversation between requester and donor
+  // Auto-create/reuse conversation between requester and Bonitar
   try {
-    await createConversation(item.donor_id, itemId);
-  } catch {
-    // Conversation may already exist
+    await createOrGetConversation(item.donor_id, itemId);
+  } catch (conversationError) {
+    console.error("[chat] auto conversation creation failed after request", conversationError);
   }
 
   // Notify the Bonitar
-  await supabase.from("notifications").insert({
+  const { error: notificationError } = await supabase.from("notifications").insert({
     user_id: item.donor_id,
     type: "donation_request",
     title: "New Item Request! 🎁",
     content: `Someone has requested your item "${item.title}". View and manage your requests.`,
   });
 
+  if (notificationError) {
+    console.error("[notifications] failed to notify Bonitar about request", notificationError);
+  }
+
   return request;
 };
 
-// Donor: get all requests for their items
+// Bonitar: get all requests for their items
 export const useDonorItemRequests = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refetch = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setLoading(false); return; }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    const { data } = await supabase
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
       .from("item_requests")
-      .select("*, item:items(title, image_urls, category, status), recipient:profiles!item_requests_recipient_id_fkey(username, display_name, avatar_url, items_donated, badges)")
+      .select(
+        "*, item:items(title, image_urls, category, status), recipient:profiles!item_requests_recipient_id_fkey(username, display_name, avatar_url, items_donated, badges)"
+      )
       .eq("donor_id", user.id)
       .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("[requests] Bonitar requests fetch failed", error);
+      setLoading(false);
+      return;
+    }
 
     setRequests((data as any[]) ?? []);
     setLoading(false);
   };
 
-  useEffect(() => { refetch(); }, []);
+  useEffect(() => {
+    void refetch();
+  }, []);
 
   return { requests, loading, refetch };
 };
@@ -223,7 +279,11 @@ export const useAppreciationMessages = (userId?: string) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!userId) { setLoading(false); return; }
+    if (!userId) {
+      setLoading(false);
+      return;
+    }
+
     const fetch = async () => {
       const { data } = await (supabase as any)
         .from("appreciation_messages")
@@ -232,9 +292,11 @@ export const useAppreciationMessages = (userId?: string) => {
         .eq("approved", true)
         .order("created_at", { ascending: false })
         .limit(20);
+
       setMessages((data as any[]) ?? []);
       setLoading(false);
     };
+
     fetch();
   }, [userId]);
 
@@ -242,7 +304,10 @@ export const useAppreciationMessages = (userId?: string) => {
 };
 
 export const sendAppreciation = async (recipientId: string, message: string, itemRequestId?: string) => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   if (!user) throw new Error("Not authenticated");
 
   const insertData: any = {
@@ -250,6 +315,7 @@ export const sendAppreciation = async (recipientId: string, message: string, ite
     recipient_id: recipientId,
     message,
   };
+
   if (itemRequestId) insertData.item_request_id = itemRequestId;
 
   const { error } = await (supabase as any).from("appreciation_messages").insert(insertData);

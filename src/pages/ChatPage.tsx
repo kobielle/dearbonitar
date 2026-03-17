@@ -175,7 +175,7 @@ const ChatPage = () => {
     }, 1300);
   };
 
-  const handleSend = async (e: React.FormEvent) => {
+  const handleSend = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!selectedChat || !messageText.trim()) return;

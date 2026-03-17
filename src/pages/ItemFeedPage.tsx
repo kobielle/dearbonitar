@@ -67,7 +67,7 @@ const ItemFeedPage = () => {
       });
   }, [items, searchQuery, selectedState, selectedArea]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
     setSearchQuery(searchInput);
   };

@@ -36,7 +36,7 @@ const PostItemPage = () => {
     setFiles(newFiles);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
     if (!user) {

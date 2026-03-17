@@ -99,6 +99,45 @@ export type Database = {
           },
         ]
       }
+      conversation_reads: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          last_read_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          last_read_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          last_read_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_reads_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversation_reads_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           created_at: string | null
@@ -355,37 +394,52 @@ export type Database = {
       }
       items: {
         Row: {
+          area: string | null
           category: string
           created_at: string | null
           description: string | null
           donor_id: string
+          expiration_date: string | null
           id: string
           image_urls: string[] | null
+          medicine_name: string | null
+          medicine_usage: string | null
           pickup_location: string | null
+          state: string | null
           status: string | null
           title: string
           updated_at: string | null
         }
         Insert: {
+          area?: string | null
           category: string
           created_at?: string | null
           description?: string | null
           donor_id: string
+          expiration_date?: string | null
           id?: string
           image_urls?: string[] | null
+          medicine_name?: string | null
+          medicine_usage?: string | null
           pickup_location?: string | null
+          state?: string | null
           status?: string | null
           title: string
           updated_at?: string | null
         }
         Update: {
+          area?: string | null
           category?: string
           created_at?: string | null
           description?: string | null
           donor_id?: string
+          expiration_date?: string | null
           id?: string
           image_urls?: string[] | null
+          medicine_name?: string | null
+          medicine_usage?: string | null
           pickup_location?: string | null
+          state?: string | null
           status?: string | null
           title?: string
           updated_at?: string | null

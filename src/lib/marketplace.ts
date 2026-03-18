@@ -113,7 +113,7 @@ export const NIGERIA_LOCATION_OPTIONS: Record<string, string[]> = {
     "Jos", "Bukuru", "Pankshin", "Shendam", "Barkin Ladi", "Mangu",
     "Langtang", "Wase", "Bokkos", "Riyom", "Bassa", "Kanke",
   ],
-  Cross River: [
+  "Cross River": [
     "Calabar", "Ikom", "Ogoja", "Obudu", "Ugep", "Akamkpa",
     "Odukpani", "Obubra", "Biase", "Bekwarra", "Boki", "Etung",
   ],

@@ -117,7 +117,7 @@ export const NIGERIA_LOCATION_OPTIONS: Record<string, string[]> = {
     "Calabar", "Ikom", "Ogoja", "Obudu", "Ugep", "Akamkpa",
     "Odukpani", "Obubra", "Biase", "Bekwarra", "Boki", "Etung",
   ],
-  Akwa Ibom: [
+  "Akwa Ibom": [
     "Uyo", "Eket", "Ikot Ekpene", "Oron", "Abak", "Etinan",
     "Itu", "Nsit Ibom", "Mkpat Enin", "Essien Udim", "Ibiono Ibom", "Uruan",
   ],

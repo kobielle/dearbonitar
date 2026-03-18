@@ -15,7 +15,7 @@ const WhisperBanner = () => {
   useEffect(() => {
     const fetchWhisper = async () => {
       const { data, error } = await (supabase as any)
-        .from("whispers")
+        .from("whispers" as any)
         .select("message")
         .order("created_at", { ascending: false })
         .limit(1);

@@ -579,6 +579,48 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          id: string
+          rating: number
+          reviewed_user_id: string
+          reviewer_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating: number
+          reviewed_user_id: string
+          reviewer_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number
+          reviewed_user_id?: string
+          reviewer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_reviewed_user_id_fkey"
+            columns: ["reviewed_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_reviewer_id_fkey"
+            columns: ["reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -634,6 +676,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whispers: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+        }
+        Relationships: []
       }
     }
     Views: {

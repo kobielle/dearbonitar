@@ -53,15 +53,15 @@ const DonorSpotlightPage = () => {
             </motion.div>
           </div>
 
-          {/* Spotlight Submission Form (Bonitars only) */}
-          {user && isDonor && (
+          {/* Spotlight Submission Form (Bonitars with 7+ donations only) */}
+          {user && isDonor && (profile?.items_donated ?? 0) >= 7 && (
             <div className="max-w-2xl mx-auto mb-12 bg-card rounded-2xl border border-border p-6 shadow-card">
               <h2 className="font-display text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
                 <Send className="h-5 w-5 text-primary" />
                 Submit Your Spotlight Story
               </h2>
               <p className="font-body text-sm text-muted-foreground mb-4">
-                Share your experience as a Bonitar. Approved entries will be featured on this page!
+                You've unlocked the Spotlight! Share your experience (one-time post, expires after 48 hours).
               </p>
               <textarea
                 value={message}

@@ -67,6 +67,27 @@ export const submitSpotlight = async (message: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
+  // Check donation count >= 7
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("items_donated")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || (profile.items_donated ?? 0) < 7) {
+    throw new Error("You need at least 7 completed donations to post a spotlight.");
+  }
+
+  // Check if already posted (one-time only)
+  const { count } = await supabase
+    .from("donor_spotlight")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  if ((count ?? 0) > 0) {
+    throw new Error("You have already submitted a spotlight. Each Bonitar can only post once.");
+  }
+
   const { error } = await supabase
     .from("donor_spotlight")
     .insert({ user_id: user.id, message });

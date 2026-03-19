@@ -42,27 +42,28 @@ const ItemFeedPage = () => {
   const filteredItems = useMemo(() => {
     const term = searchQuery.trim().toLowerCase();
 
-    const itemLocationPriority = (item: any) => {
-      const stateText = normalized(item.state || item.pickup_location);
-      const areaText = normalized(item.area || item.pickup_location);
-
-      if (selectedArea !== ALL_AREAS && areaText.includes(selectedArea.toLowerCase())) return 0;
-      if (selectedState !== ALL_STATES && stateText.includes(selectedState.toLowerCase())) return 1;
-      return 2;
-    };
-
     return [...items]
       .filter((item) => {
-        if (!term) return true;
+        // Location filter: strict matching when selected
+        if (selectedState !== ALL_STATES) {
+          const stateText = normalized(item.state || item.pickup_location);
+          if (!stateText.includes(selectedState.toLowerCase())) return false;
+        }
+        if (selectedArea !== ALL_AREAS) {
+          const areaText = normalized(item.area || item.pickup_location);
+          if (!areaText.includes(selectedArea.toLowerCase())) return false;
+        }
 
-        return [item.title, item.description, item.category, item.pickup_location, item.state, item.area]
-          .filter(Boolean)
-          .some((value) => String(value).toLowerCase().includes(term));
+        // Search filter: match title, description, or category
+        if (term) {
+          return [item.title, item.description, item.category, item.pickup_location, item.state, item.area]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(term));
+        }
+
+        return true;
       })
       .sort((a: any, b: any) => {
-        const locationSort = itemLocationPriority(a) - itemLocationPriority(b);
-        if (locationSort !== 0) return locationSort;
-
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
   }, [items, searchQuery, selectedState, selectedArea]);

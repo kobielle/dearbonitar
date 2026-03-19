@@ -1,21 +1,21 @@
 export const ITEM_CATEGORIES = [
   "Food",
+  "Clothing",
   "Electronics",
+  "Medication",
+  "Beauty & Personal Care",
   "Gadgets",
   "Books",
-  "Clothing",
   "Shoes",
   "Furniture",
   "Appliances",
   "Baby items",
   "School supplies",
   "Kitchen items",
-  "Medication",
-  "Beauty & Personal Care",
   "Other",
 ] as const;
 
-export const ITEM_FEED_CATEGORIES = ["All", ...ITEM_CATEGORIES] as const;
+export const ITEM_FEED_CATEGORIES = ["All", "Food", "Clothing", "Electronics", "Medication", "Beauty & Personal Care"] as const;
 
 export const CATEGORY_EMOJIS: Record<string, string> = {
   Food: "🍚",

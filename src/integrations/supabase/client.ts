@@ -1,14 +1,14 @@
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+import { createClient } from '@supabase/supabase-js';
 
-export const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY,
-  {
-    auth: {
-      storage: localStorage,
-      persistSession: true,
-      autoRefreshToken: true,
-    }
+// REPLACE THESE WITH YOUR REAL KEYS FROM SUPABASE
+const SUPABASE_URL = 'https://your-project-id.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key-here';
+
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storage: localStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
   }
-);
+});

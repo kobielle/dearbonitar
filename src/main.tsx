@@ -3,22 +3,24 @@ import App from "./App.tsx";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
-// Use the relative path to avoid the '@' error
+// Using a direct relative path to the client
 import { supabase } from './integrations/supabase/client';
 
-async function testConnection() {
+// This function will force a popup on your phone screen
+async function startSystemCheck() {
   try {
-    const { data, error } = await supabase.from('items').select('*').limit(1);
+    const { data, error } = await supabase.from('items').select('id').limit(1);
     
     if (error) {
-      alert("❌ CONNECTION ERROR: " + error.message);
+      alert("⚠️ DATABASE ERROR: " + error.message);
     } else {
-      alert("✅ SUCCESS: Connected to DearBonitar Database!");
-      console.log("Items found:", data);
+      alert("✅ CONNECTION SUCCESS! Your database is linked.");
     }
   } catch (err) {
-    alert("⚠️ SYSTEM ERROR: The supabase client could not initialize. Check your .env keys.");
+    alert("❌ CRITICAL: The website cannot find your Supabase keys. Check your .env file.");
   }
 }
 
-testConnection();
+// Start the check
+startSystemCheck();
+
